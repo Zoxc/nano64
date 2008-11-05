@@ -31,6 +31,9 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="CPU\CPU.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="CPU\CPU.h" />
 		<Unit filename="CPU\OpCodes.c">
 			<Option compilerVar="CC" />

@@ -60,6 +60,34 @@ void NoOpCode()
     UnknownOpCode();
 }
 
+void NoOp()
+{
+    Parameters;
+
+    if(Debugging)
+        Assembly("nop\n");
+}
+
+void ShiftLeftLogical()
+{
+    Parameters;
+
+    GeneralPurpose[Rt] = GeneralPurpose[Rs] << Immediate;
+
+    if(Debugging)
+        Assembly("sll %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
+}
+
+void ShiftRightLogical()
+{
+    Parameters;
+
+    GeneralPurpose[Rt] = GeneralPurpose[Rs] >> Immediate;
+
+    if(Debugging)
+        Assembly("srl %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
+}
+
 void MoveFromHigh()
 {
     Parameters;
@@ -156,33 +184,13 @@ void DivideUnsigned() // mult RegLow, RegHigh = Rs * Rt
         Assembly("divu %s, %s\n", RegisterNames[Rs], RegisterNames[Rt]);
 }
 
+VoidCall OpCode_0_Table[64];
+
 void OpCode_0()
 {
     Parameters;
 
-    switch(Function)
-    {
-        case 0:
-            if(Debugging)
-                Assembly("nop\n");
-            break;
-
-        case 0x10: MoveFromHigh(); break;
-        case 0x12: MoveFromLow(); break;
-
-        case 0x18: Multiply(); break;
-
-        case 0x1A: Divide(); break;
-        case 0x1B: DivideUnsigned(); break;
-
-        case 0x20: AddTrap(); break;
-        case 0x21: Add(); break;
-
-        case 0x22: SubtractTrap(); break;
-        case 0x23: Subtract(); break;
-
-        default: UnknownOpCode(); break;
-    }
+    OpCode_0_Table[Function]();
 }
 
 void AddImmediateTrap()
@@ -207,12 +215,33 @@ void AddImmediate()
 
 VoidCall JumpTable[64];
 
-void SetupJumpTable()
+void SetupJumpTables()
 {
+    for(int i = 0;  i < 64; i++)
+        OpCode_0_Table[i] = NoOpCode;
+
+    OpCode_0_Table[0x0] = ShiftLeftLogical;
+    OpCode_0_Table[0x2] = ShiftRightLogical;
+
+    OpCode_0_Table[0x10] = MoveFromHigh;
+    OpCode_0_Table[0x12] = MoveFromLow;
+
+    OpCode_0_Table[0x18] = Multiply;
+
+    OpCode_0_Table[0x1A] = Divide;
+    OpCode_0_Table[0x1B] = DivideUnsigned;
+
+    OpCode_0_Table[0x20] = AddTrap;
+    OpCode_0_Table[0x21] = Add;
+
+    OpCode_0_Table[0x22] = SubtractTrap;
+    OpCode_0_Table[0x23] = Subtract;
+
+    // Main JumpTable
     for(int i = 0;  i < 64; i++)
         JumpTable[i] = NoOpCode;
 
-    JumpTable[0] = OpCode_0;
+    JumpTable[0x0] = OpCode_0;
     JumpTable[0x8] = AddImmediateTrap;
     JumpTable[0x9] = AddImmediate;
 }

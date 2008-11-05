@@ -37,7 +37,7 @@ void DumpRegisters()
     for(int i = 0; i < 33; i++, Align++)
     {
         if(i == 32)
-            printf("$pc: %.8X", ProgamCounter);
+            printf("$pc: %.8X", (uint32_t)ProgamCounter);
         else
             printf("%s: %16lld", RegisterNames[i], GeneralPurpose[i]);
 
@@ -66,7 +66,7 @@ void Intrepret()
 
             DumpRegisters();
 
-            printf("\n\nCurrent instruction [%.8lX] ", Instruction);
+            printf("\n\nCurrent instruction [%.8X] ", Instruction);
 
             JumpTable[Instruction >> 26]();
 
@@ -103,7 +103,7 @@ int main()
 {
     printf("nano64 0.0.1 - A very incomplete Nintendo 64 emulator\n");
 
-    SetupJumpTable();
+    SetupJumpTables();
 
     uint32_t Test[] = {MakeImmediateOp(0x9, 0, 2, 0x1337), MakeRegisterOp(0, 3, 2, 1, 0, 0x21), MakeRegisterOp(0, 0, 1, 3, 2, 0x23), 0};
 

@@ -1,6 +1,5 @@
 #pragma once
 #include <stdio.h>
-#include <inttypes.h>
 #include "CPU.h"
 
 #define Debugging true
@@ -11,7 +10,7 @@
 typedef void (*VoidCall)();
 extern VoidCall JumpTable[64];
 
-void SetupJumpTable();
+void SetupJumpTables();
 void UnknownOpCode();
 void NoOpCode();
 
