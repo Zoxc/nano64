@@ -42,7 +42,7 @@
         }
 #endif
 
-void UnknownOpCode()
+void CPUUnknownOpCode()
 {
     Parameters;
 
@@ -55,44 +55,49 @@ void UnknownOpCode()
     printf("    Opcode: 0x%.2X, Address: %9d\n", *ProgamCounter >> 26, Address);
 }
 
-void NoOpCode()
+void CPUNoOpCode()
 {
-    UnknownOpCode();
+    CPUUnknownOpCode();
 }
 
-void NoOp()
+#include "Arithmetic32.inc"
+#include "Arithmetic64.inc"
+
+void And()
 {
     Parameters;
 
+    GeneralPurpose64(Rd) = GeneralPurpose64(Rs) & GeneralPurpose64(Rt);
+
     if(Debugging)
-        Assembly("nop\n");
+        Assembly("and %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
 }
 
-void ShiftLeftLogical()
+void AndImmediate()
 {
     Parameters;
 
-    GeneralPurpose[Rt] = GeneralPurpose[Rs] << Immediate;
+    GeneralPurpose64(Rt) = GeneralPurpose64(Rs) & Immediate;
 
     if(Debugging)
-        Assembly("sll %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
+        Assembly("andi %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
 }
 
-void ShiftRightLogical()
+void LoadUpperImmediate()
 {
     Parameters;
 
-    GeneralPurpose[Rt] = GeneralPurpose[Rs] >> Immediate;
+    ((uint16_t*)(&GeneralPurpose[Rt]))[1] = Immediate;
 
     if(Debugging)
-        Assembly("srl %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
+        Assembly("lui %s, %d\n", RegisterNames[Rt], Immediate);
 }
 
 void MoveFromHigh()
 {
     Parameters;
 
-    GeneralPurpose[Rd] = RegHigh;
+    GeneralPurpose64(Rd) = RegHigh64;
 
     if(Debugging)
         Assembly("mfhi %s\n", RegisterNames[Rd]);
@@ -102,88 +107,132 @@ void MoveFromLow()
 {
     Parameters;
 
-    GeneralPurpose[Rd] = RegLow;
+    GeneralPurpose64(Rd) = RegLow64;
 
     if(Debugging)
         Assembly("mflo %s\n", RegisterNames[Rd]);
 }
 
-void Add()
+void MoveToHigh()
 {
     Parameters;
 
-    GeneralPurpose32(Rd) = GeneralPurpose32(Rs);
-
-    GeneralPurpose[Rd] = GeneralPurpose[Rs] + GeneralPurpose[Rt];
+    RegHigh64 = GeneralPurpose64(Rd);
 
     if(Debugging)
-        Assembly("addu %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
+        Assembly("mthi %s\n", RegisterNames[Rd]);
 }
 
-void AddTrap()
+void MoveToLow()
 {
     Parameters;
 
-    GeneralPurpose[Rd] = GeneralPurpose[Rs] + GeneralPurpose[Rt];
+    RegLow64 = GeneralPurpose64(Rd);
 
     if(Debugging)
-        Assembly("add %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
+        Assembly("mtlo %s\n", RegisterNames[Rd]);
 }
 
-void SubtractTrap()
+void Nor()
 {
     Parameters;
 
-    GeneralPurpose[Rd] = GeneralPurpose[Rs] - GeneralPurpose[Rt];
+    GeneralPurpose64(Rd) = !(GeneralPurpose64(Rs) | GeneralPurpose64(Rt));
 
     if(Debugging)
-        Assembly("sub %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
+        Assembly("nor %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
 }
 
-void Subtract()
+void Or()
 {
     Parameters;
 
-    GeneralPurpose[Rd] = GeneralPurpose[Rs] - GeneralPurpose[Rt];
+    GeneralPurpose64(Rd) = GeneralPurpose64(Rs) | GeneralPurpose64(Rt);
 
     if(Debugging)
-        Assembly("subu %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
+        Assembly("or %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
 }
 
-void Multiply()
+void OrImmediate()
 {
     Parameters;
 
-    ((uint32_t*)&RegLow)[0] = ((uint32_t*)&GeneralPurpose[Rs])[0] * ((uint32_t*)&GeneralPurpose[Rt])[0];
-    ((uint32_t*)&RegLow)[1] = ((uint32_t*)&GeneralPurpose[Rs])[0] * ((uint32_t*)&GeneralPurpose[Rt])[1];
-
-    ((uint32_t*)&RegHigh)[0] = ((uint32_t*)&GeneralPurpose[Rs])[1] * ((uint32_t*)&GeneralPurpose[Rt])[0];
-    ((uint32_t*)&RegHigh)[1] = ((uint32_t*)&GeneralPurpose[Rs])[1] * ((uint32_t*)&GeneralPurpose[Rt])[1];
+    GeneralPurpose64(Rt) = GeneralPurpose64(Rs) | Immediate;
 
     if(Debugging)
-        Assembly("mult %s, %s\n", RegisterNames[Rs], RegisterNames[Rt]);
+        Assembly("ori %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
 }
 
-void Divide()
+void SetOnLessThan()
 {
     Parameters;
 
-    RegLow = (uint64_t)((int64_t)GeneralPurpose[Rs] / (int64_t)GeneralPurpose[Rt]);
-    RegHigh = (uint64_t)((int64_t)GeneralPurpose[Rs] % (int64_t)GeneralPurpose[Rt]);
+    if((int64_t)GeneralPurpose64(Rs) < (int64_t)GeneralPurpose64(Rt))
+        GeneralPurpose64(Rd) = 1;
+    else
+        GeneralPurpose64(Rd) = 0;
 
     if(Debugging)
-        Assembly("div %s, %s\n", RegisterNames[Rs], RegisterNames[Rt]);
+        Assembly("slt %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
 }
 
-void DivideUnsigned() // mult RegLow, RegHigh = Rs * Rt
+void SetOnLessThanImmediate()
 {
     Parameters;
 
-    RegLow = GeneralPurpose[Rs] / GeneralPurpose[Rt];
-    RegHigh = GeneralPurpose[Rs] % GeneralPurpose[Rt];
+    if((int64_t)GeneralPurpose64(Rs) < (int16_t)Immediate)
+        GeneralPurpose64(Rd) = 1;
+    else
+        GeneralPurpose64(Rd) = 0;
 
     if(Debugging)
-        Assembly("divu %s, %s\n", RegisterNames[Rs], RegisterNames[Rt]);
+        Assembly("slti %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
+}
+
+void SetOnLessThanImmediateUnsigned()
+{
+    Parameters;
+
+    if(GeneralPurpose64(Rs) < Immediate)
+        GeneralPurpose64(Rd) = 1;
+    else
+        GeneralPurpose64(Rd) = 0;
+
+    if(Debugging)
+        Assembly("sltiu %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
+}
+
+void SetOnLessThanUnsigned()
+{
+    Parameters;
+
+    if(GeneralPurpose64(Rs) < GeneralPurpose64(Rt))
+        GeneralPurpose64(Rd) = 1;
+    else
+        GeneralPurpose64(Rd) = 0;
+
+    if(Debugging)
+        Assembly("sltu %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
+}
+
+void Xor()
+{
+    Parameters;
+
+    GeneralPurpose64(Rd) = GeneralPurpose64(Rs) ^ GeneralPurpose64(Rt);
+
+    if(Debugging)
+        Assembly("xor %s, %s, %s\n", RegisterNames[Rd], RegisterNames[Rs], RegisterNames[Rt]);
+}
+
+void XorImmediate()
+{
+    Parameters;
+
+    GeneralPurpose64(Rt) = GeneralPurpose64(Rs) ^ Immediate;
+
+    if(Debugging)
+        Assembly("xori %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
 }
 
 VoidCall OpCode_0_Table[64];
@@ -195,55 +244,90 @@ void OpCode_0()
     OpCode_0_Table[Function]();
 }
 
-void AddImmediateTrap()
+VoidCall CPUJumpTable[64];
+
+void CPUSetupJumpTables()
 {
-    Parameters;
-
-    GeneralPurpose[Rt] = GeneralPurpose[Rs] + (RegisterSigned)Immediate;
-
-    if(Debugging)
-        Assembly("addi %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
-}
-
-void AddImmediate()
-{
-    Parameters;
-
-    GeneralPurpose[Rt] = GeneralPurpose[Rs] + (RegisterSigned)Immediate;
-
-    if(Debugging)
-        Assembly("addiu %s, %s, %d\n", RegisterNames[Rt], RegisterNames[Rs], Immediate);
-}
-
-VoidCall JumpTable[64];
-
-void SetupJumpTables()
-{
+    // Main jumptable
     for(int i = 0;  i < 64; i++)
-        OpCode_0_Table[i] = NoOpCode;
+        CPUJumpTable[i] = CPUNoOpCode;
 
-    OpCode_0_Table[0x0] = ShiftLeftLogical;
-    OpCode_0_Table[0x2] = ShiftRightLogical;
-
-    OpCode_0_Table[0x10] = MoveFromHigh;
-    OpCode_0_Table[0x12] = MoveFromLow;
-
-    OpCode_0_Table[0x18] = Multiply;
-
-    OpCode_0_Table[0x1A] = Divide;
-    OpCode_0_Table[0x1B] = DivideUnsigned;
-
-    OpCode_0_Table[0x20] = AddTrap;
-    OpCode_0_Table[0x21] = Add;
-
-    OpCode_0_Table[0x22] = SubtractTrap;
-    OpCode_0_Table[0x23] = Subtract;
-
-    // Main JumpTable
+    // Opcode 0 jumptable
     for(int i = 0;  i < 64; i++)
-        JumpTable[i] = NoOpCode;
+        OpCode_0_Table[i] = CPUNoOpCode;
 
-    JumpTable[0x0] = OpCode_0;
-    JumpTable[0x8] = AddImmediateTrap;
-    JumpTable[0x9] = AddImmediate;
+    CPUJumpTable[0] = OpCode_0;
+
+    // Opcodes
+    OpCode_0_Table[32] = AddTrap32;
+    CPUJumpTable[8] = AddImmediateTrap32;
+    CPUJumpTable[9] = AddImmediate32;
+    OpCode_0_Table[33] = Add32;
+
+    OpCode_0_Table[36] = And;
+    CPUJumpTable[12] = AndImmediate;
+
+    OpCode_0_Table[44] = AddTrap64;
+    CPUJumpTable[24] = AddImmediateTrap64;
+    CPUJumpTable[25] = AddImmediate64;
+    OpCode_0_Table[45] = Add64;
+
+    OpCode_0_Table[26] = Divide64;
+    OpCode_0_Table[27] = DivideUnsigned64;
+
+    OpCode_0_Table[30] = Divide32;
+    OpCode_0_Table[31] = DivideUnsigned32;
+
+    OpCode_0_Table[28] = Multiply64;
+    OpCode_0_Table[29] = MultiplyUnsigned64;
+
+    OpCode_0_Table[56] = ShiftLeftLogical64;
+    OpCode_0_Table[60] = ShiftLeftLogical3264;
+    OpCode_0_Table[20] = ShiftLeftLogicalVariable64;
+
+    OpCode_0_Table[59] = ShiftRightArithmetic64;
+    OpCode_0_Table[63] = ShiftRightArithmetic3264;
+    OpCode_0_Table[23] = ShiftRightArithmeticVariable64;
+
+    OpCode_0_Table[58] = ShiftRightLogical64;
+    OpCode_0_Table[62] = ShiftRightLogical3264;
+    OpCode_0_Table[22] = ShiftRightLogicalVariable64;
+
+    OpCode_0_Table[46] = SubtractTrap64;
+    OpCode_0_Table[47] = Subtract64;
+
+    CPUJumpTable[15] = LoadUpperImmediate;
+
+    OpCode_0_Table[16] = MoveFromHigh;
+    OpCode_0_Table[18] = MoveFromLow;
+    OpCode_0_Table[17] = MoveToHigh;
+    OpCode_0_Table[19] = MoveToLow;
+
+    OpCode_0_Table[24] = Multiply32;
+    OpCode_0_Table[25] = MultiplyUnsigned32;
+
+    OpCode_0_Table[39] = Nor;
+
+    OpCode_0_Table[37] = Or;
+    CPUJumpTable[13] = OrImmediate;
+
+    OpCode_0_Table[0] = ShiftLeftLogical32;
+    OpCode_0_Table[4] = ShiftLeftLogicalVariable32;
+
+    OpCode_0_Table[42] = SetOnLessThan;
+    CPUJumpTable[10] = SetOnLessThanImmediate;
+    CPUJumpTable[11] = SetOnLessThanImmediateUnsigned;
+    OpCode_0_Table[43] = SetOnLessThanUnsigned;
+
+    OpCode_0_Table[3] = ShiftRightArithmetic32;
+    OpCode_0_Table[7] = ShiftRightArithmeticVariable32;
+
+    OpCode_0_Table[2] = ShiftRightLogical32;
+    OpCode_0_Table[6] = ShiftRightLogicalVariable32;
+
+    OpCode_0_Table[34] = SubtractTrap32;
+    OpCode_0_Table[35] = Subtract32;
+
+    OpCode_0_Table[38] = Xor;
+    CPUJumpTable[14] = XorImmediate;
 }

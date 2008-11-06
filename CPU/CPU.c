@@ -6,7 +6,7 @@ uint64_t GeneralPurpose[64];
 uint64_t FPGeneralPurpose[64];
 uint32_t* ProgamCounter;
 
-uint64_t RegHigh;
-uint64_t RegLow;
+uint64_t RegHigh64;
+uint64_t RegLow64;
 
 bool LLbit;

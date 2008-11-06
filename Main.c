@@ -1,12 +1,13 @@
 #include <stdlib.h>
-#include <conio.h>
 
 #ifdef WIN32
     #include <windows.h>
+    #include <conio.h>
 #endif
 
 #include "CPU\CPU.h"
 #include "CPU\OpCodes.h"
+
 
 void WaitForKeyPress()
 {
@@ -27,17 +28,20 @@ void ClearScreen()
 
         SetConsoleCursorPosition(StdOut, Coord);
     #else
-        write(1,"\E[H\E[2J",7);
+        system("clear");
     #endif
 }
 
 void DumpRegisters()
 {
-    int Align = 0;
-    for(int i = 0; i < 33; i++, Align++)
+    int Align = 1;
+
+    printf("$zero: %14lld        ", GeneralPurpose[0]);
+
+    for(int i = 1; i < 33; i++, Align++)
     {
         if(i == 32)
-            printf("$pc: %.8X", (uint32_t)ProgamCounter);
+            printf("$pc: %16.8X", (uint32_t)ProgamCounter);
         else
             printf("%s: %16lld", RegisterNames[i], GeneralPurpose[i]);
 
@@ -62,13 +66,13 @@ void Intrepret()
             uint32_t Instruction = *ProgamCounter;
 
             ClearScreen();
-            printf("nano64 0.0.1 - A very incomplete Nintendo 64 emulator %X\n\n", MakeImmediateOp(0x9, 0, 2, 1337));
+            printf("nano64 0.0.1 - A very incomplete Nintendo 64 emulator\n\n");
 
             DumpRegisters();
 
             printf("\n\nCurrent instruction [%.8X] ", Instruction);
 
-            JumpTable[Instruction >> 26]();
+            CPUJumpTable[Instruction >> 26]();
 
             printf("\nPress a key to step forward...");
 
@@ -92,7 +96,7 @@ void Intrepret()
         {
             uint32_t Instruction = *ProgamCounter;
 
-            JumpTable[Instruction >> 26]();
+            CPUJumpTable[Instruction >> 26]();
 
             ProgamCounter++;
         }
@@ -103,9 +107,9 @@ int main()
 {
     printf("nano64 0.0.1 - A very incomplete Nintendo 64 emulator\n");
 
-    SetupJumpTables();
+    CPUSetupJumpTables();
 
-    uint32_t Test[] = {MakeImmediateOp(0x9, 0, 2, 0x1337), MakeRegisterOp(0, 3, 2, 1, 0, 0x21), MakeRegisterOp(0, 0, 1, 3, 2, 0x23), 0};
+    uint32_t Test[] = {CPUMakeImmediateOp(0x9, 0, 2, 0x1337), CPUMakeRegisterOp(0, 3, 2, 1, 0, 0x21), CPUMakeRegisterOp(0, 0, 1, 3, 2, 0x23), 0};
 
     ProgamCounter = Test;
 
