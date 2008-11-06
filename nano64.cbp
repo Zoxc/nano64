@@ -8,7 +8,7 @@
 		<Build>
 			<Target title="Debug">
 				<Option output="nano64" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Debug\" />
+				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -17,7 +17,7 @@
 			</Target>
 			<Target title="Release">
 				<Option output="nano64" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\Release\" />
+				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -31,14 +31,14 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="CPU\CPU.c">
+		<Unit filename="CPU/CPU.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="CPU\CPU.h" />
-		<Unit filename="CPU\OpCodes.c">
+		<Unit filename="CPU/CPU.h" />
+		<Unit filename="CPU/OpCodes.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="CPU\OpCodes.h" />
+		<Unit filename="CPU/OpCodes.h" />
 		<Unit filename="Main.c">
 			<Option compilerVar="CC" />
 		</Unit>

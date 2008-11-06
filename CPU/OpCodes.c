@@ -112,6 +112,8 @@ void Add()
 {
     Parameters;
 
+    GeneralPurpose32(Rd) = GeneralPurpose32(Rs);
+
     GeneralPurpose[Rd] = GeneralPurpose[Rs] + GeneralPurpose[Rt];
 
     if(Debugging)
