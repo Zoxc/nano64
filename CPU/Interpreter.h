@@ -8,6 +8,8 @@
 typedef void (*VoidCall)();
 extern VoidCall CPUJumpTable[64];
 
+extern bool Branching;
+
 void CPUSetupJumpTables();
 void CPUUnknownOpCode();
 void CPUNoOpCode();

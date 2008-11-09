@@ -5,8 +5,8 @@
     #include <conio.h>
 #endif
 
-#include "CPU\CPU.h"
-#include "CPU\OpCodes.h"
+#include "CPU/CPU.h"
+#include "CPU/Interpreter.h"
 
 
 void WaitForKeyPress()
@@ -22,6 +22,7 @@ void ClearScreen()
         DWORD Count;
 
         CONSOLE_SCREEN_BUFFER_INFO Info;
+
         GetConsoleScreenBufferInfo(StdOut, &Info);
 
         FillConsoleOutputCharacter(StdOut, ' ', Info.dwSize.X * Info.dwSize.Y, Coord, &Count);
@@ -57,6 +58,7 @@ void DumpRegisters()
 
 void Intrepret()
 {
+    Branching = false;
     GeneralPurpose[0] = 0;
 
     if(Debugging)
@@ -94,9 +96,7 @@ void Intrepret()
     {
         while(true)
         {
-            uint32_t Instruction = *ProgamCounter;
-
-            CPUJumpTable[Instruction >> 26]();
+            CPUJumpTable[*ProgamCounter >> 26]();
 
             ProgamCounter++;
         }
@@ -109,7 +109,7 @@ int main()
 
     CPUSetupJumpTables();
 
-    uint32_t Test[] = {CPUMakeImmediateOp(0x9, 0, 2, 0x1337), CPUMakeRegisterOp(0, 3, 2, 1, 0, 0x21), CPUMakeRegisterOp(0, 0, 1, 3, 2, 0x23), 0};
+    uint32_t Test[] = {CPUMakeImmediateOp(0x9, 0, 2, 1337), CPUMakeRegisterOp(0, 3, 2, 1, 0, 0x21), CPUMakeRegisterOp(0, 0, 1, 3, 2, 0x23), 0};
 
     ProgamCounter = Test;
 
